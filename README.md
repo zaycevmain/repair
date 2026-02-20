@@ -1,6 +1,6 @@
 # Реестр поломок / ремонта
-![Screenshot](https://github.com/zaycevmain/repair/blob/main/pic.png)
 Система учёта поломок оборудования с внесением заявок через сканирование ШК/QR в браузере (в т.ч. мобильном, iOS Safari).
+![Screenshot](https://github.com/zaycevmain/repair/blob/main/pic.png)
 
 ## Требования
 
