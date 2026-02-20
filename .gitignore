@@ -1,0 +1,9 @@
+# Установка (создаётся install.php)
+config.local.php
+.installed
+
+# Composer
+/vendor/
+
+# Загруженные файлы (по желанию раскомментируйте)
+# /uploads/breakdowns/*

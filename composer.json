@@ -1,0 +1,13 @@
+{
+    "name": "repair/registry",
+    "require": {
+        "php": ">=7.4",
+        "phpoffice/phpspreadsheet": "^1.29"
+    },
+    "config": {
+        "optimize-autoloader": true,
+        "platform": {
+            "php": "8.0.30"
+        }
+    }
+}
