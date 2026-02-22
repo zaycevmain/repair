@@ -18,8 +18,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $st = $pdo->prepare('UPDATE users SET is_active = IF(COALESCE(is_active,1)=1, 0, 1) WHERE id = ?');
             $st->execute([$uid]);
             $message = 'Статус пользователя изменён.';
-            header('Location: ?tab=users&msg=' . urlencode($message));
-            exit;
+            redirect(WEB_ROOT . '/admin/?tab=users&msg=' . urlencode($message));
         } else {
             $error = 'Нельзя заблокировать себя.';
         }
@@ -43,8 +42,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 } else {
                     $pdo->prepare('DELETE FROM users WHERE id = ?')->execute([$uid]);
                     $message = 'Пользователь удалён.';
-                    header('Location: ?tab=users&msg=' . urlencode($message));
-                    exit;
+                    redirect(WEB_ROOT . '/admin/?tab=users&msg=' . urlencode($message));
                 }
             }
         }
@@ -134,8 +132,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             }
             $message = 'Импортировано пользователей: ' . $imported . '.';
             if (!empty($createdLog)) $message .= ' ' . implode('; ', array_slice($createdLog, 0, 15)) . (count($createdLog) > 15 ? '…' : '');
-            header('Location: ?tab=users&msg=' . urlencode($message));
-            exit;
+            redirect(WEB_ROOT . '/admin/?tab=users&msg=' . urlencode($message));
         }
     }
     if (isset($_POST['create_user'])) {
@@ -155,8 +152,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $st = $pdo->prepare('INSERT INTO users (role_id, pin, name, email) VALUES (?, ?, ?, ?)');
             $st->execute([$roleId, $pin, $name, $email]);
             $message = "Оператор создан. Пин-код: $pin (сообщите его сотруднику).";
-            header('Location: ?tab=users&msg=' . urlencode($message));
-            exit;
+            redirect(WEB_ROOT . '/admin/?tab=users&msg=' . urlencode($message));
         } else {
             $login = trim((string) $_POST['login']);
             $password = (string) $_POST['password'];
@@ -167,8 +163,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 try {
                     $st->execute([$roleId, $login, password_hash($password, PASSWORD_DEFAULT), $name, $email]);
                     $message = 'Пользователь создан.';
-                    header('Location: ?tab=users&msg=1');
-                    exit;
+                    redirect(WEB_ROOT . '/admin/?tab=users&msg=' . urlencode($message));
                 } catch (\PDOException $e) {
                     if ($e->getCode() == 23000) $error = 'Логин уже занят.';
                     else $error = $e->getMessage();

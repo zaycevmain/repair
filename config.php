@@ -4,6 +4,7 @@
  */
 error_reporting(E_ALL);
 ini_set('display_errors', 1);
+ob_start(); // буфер, чтобы при redirect() не было "headers already sent"
 
 define('ROOT', __DIR__);
 

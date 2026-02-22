@@ -4,6 +4,7 @@ function e(?string $s): string {
 }
 
 function redirect(string $url, int $code = 302): void {
+    while (ob_get_level()) ob_end_clean();
     header('Location: ' . $url, true, $code);
     exit;
 }

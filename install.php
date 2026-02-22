@@ -91,8 +91,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $step === 1) {
     $user = trim($_POST['db_user'] ?? '');
     $pass = $_POST['db_pass'] ?? '';
     $webRoot = trim($_POST['web_root'] ?? '');
-    if ($webRoot === '') $webRoot = '/repair';
-    if (strpos($webRoot, '..') !== false) $webRoot = '/repair';
+    if (strpos($webRoot, '..') !== false) $webRoot = '';
 
     if ($dbname === '') $errors[] = 'Укажите имя базы данных.';
     if ($user === '') $errors[] = 'Укажите пользователя MySQL.';
@@ -238,8 +237,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $step === 1) {
             <label>Пароль MySQL</label>
             <input type="password" name="db_pass" value="<?= esc($_POST['db_pass'] ?? '') ?>" placeholder="">
             <label>Путь к сайту (WEB_ROOT)</label>
-            <input type="text" name="web_root" value="<?= esc($_POST['web_root'] ?? preg_replace('#/install\.php.*$#', '', $_SERVER['SCRIPT_NAME'] ?? '') ?: '/repair') ?>" placeholder="/repair">
-            <div class="hint">Путь от корня домена, например /repair или /</div>
+            <input type="text" name="web_root" value="<?= esc($_POST['web_root'] ?? preg_replace('#/install\.php.*$#', '', $_SERVER['SCRIPT_NAME'] ?? '') ?: '') ?>" placeholder="">
+            <div class="hint">Путь от корня домена. Оставьте пустым, если сайт в корне. Пример: /repair</div>
             <button type="submit">Установить</button>
         </form>
     <?php endif; ?>
