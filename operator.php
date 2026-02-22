@@ -27,6 +27,7 @@ $myBreakdowns = $myBreakdowns->fetchAll();
     <title>Личный кабинет — Реестр поломок</title>
     <link rel="stylesheet" href="<?= e(WEB_ROOT) ?>/assets/css/common.css">
     <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
+    <script src="https://unpkg.com/heic2any@0.0.4/dist/heic2any.min.js"></script>
 </head>
 <body>
     <div class="app-wrap">
@@ -104,7 +105,7 @@ $myBreakdowns = $myBreakdowns->fetchAll();
                 </div>
                 <div class="form-group">
                     <label>Фото (необязательно)</label>
-                    <input type="file" name="photos[]" id="f_photos" accept="image/*" multiple>
+                    <input type="file" name="photos[]" id="f_photos" accept="image/*,image/heic,image/heif,.heic,.heif" multiple>
                     <div id="photo_previews" style="display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px;"></div>
                     <div id="upload_status" class="upload-status hidden"></div>
                 </div>

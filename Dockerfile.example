@@ -1,0 +1,18 @@
+FROM php:8.3.14-fpm
+
+RUN apt-get update && apt-get install -y \
+    git curl zip unzip \
+    libzip-dev \
+    libwebp-dev libjpeg-dev libpng-dev libgif-dev \
+    && apt-get clean && rm -rf /var/lib/apt/lists/*
+
+# Конфигурация GD — ДО установки. --with-png убран (в PHP 8+ PNG подхватывается из libpng-dev)
+RUN docker-php-ext-configure gd --with-jpeg --with-webp
+
+RUN docker-php-ext-install pdo pdo_mysql mysqli zip gd
+
+WORKDIR /var/www/html
+
+COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
+
+CMD ["php-fpm"]

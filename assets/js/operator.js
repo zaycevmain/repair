@@ -220,36 +220,57 @@
     xhr.send(fd);
   });
 
+  function isHeic(file) {
+    var t = (file.type || '').toLowerCase();
+    var n = (file.name || '').toLowerCase();
+    return t === 'image/heic' || t === 'image/heif' || /\.heic$/.test(n) || /\.heif$/.test(n);
+  }
+
+  function uploadOneFile(file, preview) {
+    var upload = function (f) {
+      pendingUploads++;
+      updateUploadStatus();
+      var fd = new FormData();
+      fd.append('photo', f);
+      var xhr = new XMLHttpRequest();
+      xhr.open('POST', WEB_ROOT + '/api/upload_photo.php');
+      xhr.onload = function () {
+        pendingUploads--;
+        updateUploadStatus();
+        var data = {};
+        try { data = JSON.parse(xhr.responseText); } catch (e) {}
+        if (data.ok) {
+          uploadedPhotos.push(data.filename);
+          var img = document.createElement('img');
+          img.src = WEB_ROOT + '/uploads/breakdowns/' + data.filename;
+          img.style.maxWidth = '80px'; img.style.maxHeight = '80px'; img.style.objectFit = 'cover'; img.style.borderRadius = '8px';
+          preview.appendChild(img);
+        }
+      };
+      xhr.onerror = function () {
+        pendingUploads--;
+        updateUploadStatus();
+      };
+      xhr.send(fd);
+    };
+    if (isHeic(file) && typeof heic2any === 'function') {
+      heic2any({ blob: file, toType: 'image/jpeg', quality: 0.9 })
+        .then(function (blob) {
+          var jpeg = new File([blob], (file.name || 'photo').replace(/\.[^.]+$/, '') + '.jpg', { type: 'image/jpeg' });
+          upload(jpeg);
+        })
+        .catch(function () { upload(file); });
+    } else {
+      upload(file);
+    }
+  }
+
   document.getElementById('f_photos').addEventListener('change', function () {
     var files = this.files;
     var preview = document.getElementById('photo_previews');
     for (var i = 0; i < files.length; i++) {
-      (function (file) {
-        pendingUploads++;
-        updateUploadStatus();
-        var fd = new FormData();
-        fd.append('photo', file);
-        var xhr = new XMLHttpRequest();
-        xhr.open('POST', WEB_ROOT + '/api/upload_photo.php');
-        xhr.onload = function () {
-          pendingUploads--;
-          updateUploadStatus();
-          var data = {};
-          try { data = JSON.parse(xhr.responseText); } catch (e) {}
-          if (data.ok) {
-            uploadedPhotos.push(data.filename);
-            var img = document.createElement('img');
-            img.src = WEB_ROOT + '/uploads/breakdowns/' + data.filename;
-            img.style.maxWidth = '80px'; img.style.maxHeight = '80px'; img.style.objectFit = 'cover'; img.style.borderRadius = '8px';
-            preview.appendChild(img);
-          }
-        };
-        xhr.onerror = function () {
-          pendingUploads--;
-          updateUploadStatus();
-        };
-        xhr.send(fd);
-      })(files[i]);
+      uploadOneFile(files[i], preview);
     }
+    this.value = '';
   });
 })();

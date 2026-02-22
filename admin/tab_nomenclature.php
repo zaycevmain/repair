@@ -3,7 +3,7 @@ $pdo = \Repair\Db::get();
 $nomenclature = $pdo->query("SELECT * FROM nomenclature ORDER BY name")->fetchAll();
 $uploadError = $uploadOk = null;
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    if (isset($_POST['add_one'])) {
+    if (isset($_POST['add_one']) && \Repair\Auth::isAdmin()) {
         $inv = trim((string)($_POST['inventory_number'] ?? ''));
         $name = trim((string)($_POST['name'] ?? ''));
         if ($inv === '' || $name === '') {
@@ -13,22 +13,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $st = $pdo->prepare('INSERT INTO nomenclature (inventory_number, name) VALUES (?, ?)');
                 $st->execute([$inv, $name]);
                 $uploadOk = 'Позиция добавлена.';
-                header('Location: ?tab=nomenclature&ok=1');
-                exit;
+                redirect(WEB_ROOT . '/admin/?tab=nomenclature&ok=1');
             } catch (\PDOException $e) {
                 if ($e->getCode() == 23000) $uploadError = 'Инвентарный номер уже существует: ' . e($inv);
                 else $uploadError = 'Ошибка: ' . e($e->getMessage());
             }
         }
     }
-    if (isset($_POST['delete_id'])) {
+    if (isset($_POST['delete_id']) && \Repair\Auth::isAdmin()) {
         $id = (int) $_POST['delete_id'];
         $pdo->prepare('DELETE FROM nomenclature WHERE id = ?')->execute([$id]);
-        header('Location: ?tab=nomenclature&deleted=1');
-        exit;
+        redirect(WEB_ROOT . '/admin/?tab=nomenclature&deleted=1');
     }
-    // Excel upload
-    if (!empty($_FILES['excel_file']['tmp_name'])) {
+    if (!empty($_FILES['excel_file']['tmp_name']) && \Repair\Auth::isAdmin()) {
         $tmp = $_FILES['excel_file']['tmp_name'];
         $ext = strtolower(pathinfo($_FILES['excel_file']['name'], PATHINFO_EXTENSION));
         if ($ext === 'csv' || $ext === 'xlsx' || $ext === 'xls') {
@@ -38,8 +35,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $uploadError = $result['error'];
             } else {
                 $_SESSION['nomenclature_import_message'] = $result['message'] ?? 'Загружено позиций: ' . (int)($result['imported'] ?? 0);
-                header('Location: ?tab=nomenclature&ok_import=1');
-                exit;
+                redirect(WEB_ROOT . '/admin/?tab=nomenclature&ok_import=1');
             }
         } else {
             $uploadError = 'Допустимые форматы: CSV, XLSX, XLS';
@@ -53,6 +49,7 @@ if (isset($_GET['ok_import'])) {
     unset($_SESSION['nomenclature_import_message']);
 }
 ?>
+<?php if (\Repair\Auth::isAdmin()): ?>
 <div class="card">
     <h3 style="margin-top:0;">Добавить вручную</h3>
     <?php if ($uploadError): ?><p class="error-msg"><?= $uploadError ?></p><?php endif; ?>
@@ -78,6 +75,7 @@ if (isset($_GET['ok_import'])) {
         <button type="submit" class="btn btn-primary">Загрузить</button>
     </form>
 </div>
+<?php endif; ?>
 <div class="card">
     <h3 style="margin-top:0;">Список номенклатуры</h3>
     <div class="table-wrap">
@@ -91,10 +89,12 @@ if (isset($_GET['ok_import'])) {
                     <td><?= e($n['inventory_number']) ?></td>
                     <td><?= e($n['name']) ?></td>
                     <td>
+                        <?php if (\Repair\Auth::isAdmin()): ?>
                         <form method="post" style="display:inline;" onsubmit="return confirm('Удалить?');">
                             <input type="hidden" name="delete_id" value="<?= (int)$n['id'] ?>">
                             <button type="submit" class="btn btn-sm btn-danger">Удалить</button>
                         </form>
+                        <?php else: ?>—<?php endif; ?>
                     </td>
                 </tr>
                 <?php endforeach; ?>

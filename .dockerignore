@@ -1,0 +1,9 @@
+.git
+.gitignore
+.dockerignore
+README.md
+uploads/breakdowns/*
+!uploads/breakdowns/.gitkeep
+config.local.php
+.installed
+*.md
