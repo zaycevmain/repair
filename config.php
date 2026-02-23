@@ -26,6 +26,10 @@ if (!defined('WEB_ROOT')) {
     define('WEB_ROOT', isset($webRoot) ? $webRoot : '/repair');
 }
 
+// Часовой пояс (NOW(), date()). По умолчанию Москва. В config.local.php: $timezone = 'Europe/Moscow';
+$appTimezone = $timezone ?? 'Europe/Moscow';
+date_default_timezone_set($appTimezone);
+
 session_start();
 
 // Пути

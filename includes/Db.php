@@ -18,6 +18,8 @@ class Db {
                 \PDO::ATTR_ERRMODE => \PDO::ERRMODE_EXCEPTION,
                 \PDO::ATTR_DEFAULT_FETCH_MODE => \PDO::FETCH_ASSOC,
             ]);
+            $tz = $GLOBALS['timezone'] ?? date_default_timezone_get();
+            self::$pdo->exec("SET time_zone = " . self::$pdo->quote($tz));
         }
         return self::$pdo;
     }
