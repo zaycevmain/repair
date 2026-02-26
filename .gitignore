@@ -8,3 +8,4 @@ config.local.php
 # Загруженные файлы (по желанию раскомментируйте)
 # /uploads/breakdowns/*
 .DS_Store
+.DS_Store
