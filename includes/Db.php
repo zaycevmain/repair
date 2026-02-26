@@ -20,6 +20,11 @@ class Db {
             ]);
             $tz = $GLOBALS['timezone'] ?? date_default_timezone_get();
             self::$pdo->exec("SET time_zone = " . self::$pdo->quote($tz));
+            try {
+                self::$pdo->exec('ALTER TABLE breakdowns ADD COLUMN parent_breakdown_id int unsigned DEFAULT NULL COMMENT "элемент комплекта" AFTER reproduction_method, ADD KEY parent_breakdown_id (parent_breakdown_id)');
+            } catch (\Throwable $e) {
+                // колонка уже есть
+            }
         }
         return self::$pdo;
     }

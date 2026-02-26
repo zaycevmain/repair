@@ -62,6 +62,7 @@ $emails = setting('notify', 'emails_new_breakdown');
 $placeLabel = $placeType === 'warehouse' ? 'Склад' : ($placeType === 'site' ? 'Площадка: ' . $placeSiteProject : $placeOtherText);
 $reporterName = \Repair\Auth::userName();
 $vars = [
+    '{id}' => $breakdownId,
     '{object}' => $nomenclatureName,
     '{inventory_number}' => $inventoryNumber,
     '{place}' => $placeLabel,
@@ -70,23 +71,15 @@ $vars = [
     '{reproduction}' => $reproductionMethod,
     '{date}' => date('d.m.Y H:i'),
 ];
-$subjectTpl = setting('mail_tpl', 'new_breakdown_subject') ?: 'Новая поломка: {inventory_number}';
-$bodyTpl = setting('mail_tpl', 'new_breakdown_body') ?: "На проекте обнаружена поломка/неисправность.<br><br>Объект: {object}<br>Инв. номер: {inventory_number}<br>Место: {place}<br>Кто обнаружил: {reporter}<br><br>Описание: {description}<br>Метод воспроизведения: {reproduction}<br>";
+$subjectTpl = setting('mail_tpl', 'new_breakdown_subject') ?: 'Новая поломка #{id}: {inventory_number}';
+$bodyTpl = setting('mail_tpl', 'new_breakdown_body') ?: "На проекте обнаружена поломка/неисправность.<br><br><b>Заявка №{id}</b><br><br>Объект: {object}<br>Инв. номер: {inventory_number}<br>Место: {place}<br>Кто обнаружил: {reporter}<br><br>Описание: {description}<br>Метод воспроизведения: {reproduction}<br>";
 $subject = mail_tpl_replace($subjectTpl, $vars, false);
 $body = mail_tpl_replace($bodyTpl, $vars, true);
 if ($emails) {
     \Repair\Mailer::sendToList($emails, $subject, $body);
 }
 if (setting('telegram', 'telegram_bot_token') && setting('telegram', 'telegram_chat_id')) {
-    \Repair\Telegram::sendTemplate('new_breakdown', [
-        '{object}' => $nomenclatureName,
-        '{inventory_number}' => $inventoryNumber,
-        '{place}' => $placeLabel,
-        '{reporter}' => $reporterName,
-        '{description}' => $description,
-        '{reproduction}' => $reproductionMethod,
-        '{date}' => date('d.m.Y H:i'),
-    ]);
+    \Repair\Telegram::sendTemplate('new_breakdown', $vars);
 }
 
 json_response(['ok' => true, 'id' => $breakdownId]);

@@ -5,6 +5,18 @@ use Repair\Auth;
 
 $action = $_GET['action'] ?? '';
 $logout = isset($_GET['logout']);
+$pinFromUrl = isset($_GET['pin']) ? trim((string) $_GET['pin']) : '';
+
+if ($pinFromUrl !== '' && preg_match('/^\d{6}$/', $pinFromUrl) && !Auth::isLoggedIn()) {
+    if (Auth::loginByPin($pinFromUrl)) {
+        if (Auth::isOperator()) {
+            header('Location: ' . WEB_ROOT . '/operator.php');
+        } else {
+            header('Location: ' . WEB_ROOT . '/admin/');
+        }
+        exit;
+    }
+}
 
 if ($logout) {
     Auth::logout();
@@ -59,12 +71,16 @@ $showAdminForm = isset($_GET['admin']);
         <?php endif; ?>
 
         <?php if (!$showAdminForm): ?>
-            <form method="post" action="" class="login-form">
+            <?php $pinValue = (preg_match('/^\d{6}$/', $pinFromUrl) ? $pinFromUrl : ''); ?>
+            <form method="post" action="" class="login-form" id="pin_form">
                 <input type="hidden" name="login_pin" value="1">
                 <label>Пин-код</label>
-                <input type="text" name="pin" inputmode="numeric" pattern="[0-9]*" maxlength="6" placeholder="Введите пин-код" autofocus autocomplete="one-time-code">
+                <input type="text" name="pin" id="pin_input" inputmode="numeric" pattern="[0-9]*" maxlength="6" placeholder="Введите пин-код" value="<?= e($pinValue) ?>" autofocus autocomplete="one-time-code">
                 <button type="submit">Войти</button>
             </form>
+            <?php if ($pinValue !== ''): ?>
+            <script>document.getElementById('pin_form').submit();</script>
+            <?php endif; ?>
             <a href="?admin=1" class="admin-link" title="Вход для администратора">
                 <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>
             </a>

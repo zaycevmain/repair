@@ -8,6 +8,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['delete_breakdown']) &
     $delId = (int) ($_POST['id'] ?? 0);
     if ($delId) {
         $pdo = \Repair\Db::get();
+        $pdo->prepare('DELETE FROM breakdowns WHERE parent_breakdown_id = ?')->execute([$delId]);
         $pdo->prepare('DELETE FROM breakdowns WHERE id = ?')->execute([$delId]);
     }
     header('Location: ' . WEB_ROOT . '/admin/?tab=registry');
@@ -89,16 +90,26 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 }
 
 $place = $row['place_type'] === 'warehouse' ? 'Склад' : ($row['place_type'] === 'site' ? 'Площадка: ' . e($row['place_site_project'] ?? '') : e($row['place_other_text'] ?? ''));
+$isKit = !empty($row['parent_breakdown_id']);
+$kitItems = [];
+if (!$isKit) {
+    $kitStmt = $pdo->prepare('SELECT b.id, b.inventory_number, n.name AS nomenclature_name FROM breakdowns b LEFT JOIN nomenclature n ON n.id = b.nomenclature_id WHERE b.parent_breakdown_id = ? ORDER BY b.id');
+    $kitStmt->execute([$id]);
+    $kitItems = $kitStmt->fetchAll();
+}
 $pageTitle = 'Поломка #' . $id;
 include dirname(__DIR__) . '/admin/header.php';
 ?>
 <div class="card">
     <a href="<?= e(WEB_ROOT) ?>/admin/?tab=registry" class="btn btn-secondary btn-sm mb-2">← Реестр</a>
+    <?php if ($isKit): ?>
+    <p class="text-muted" style="margin-bottom: 16px;">↳ Комплект к заявке <a href="<?= e(WEB_ROOT) ?>/admin/breakdown.php?id=<?= (int)$row['parent_breakdown_id'] ?>">№<?= (int)$row['parent_breakdown_id'] ?></a></p>
+    <?php endif; ?>
     <?php if (isset($err)): ?><p class="error-msg"><?= e($err) ?></p><?php endif; ?>
     <table class="data-table">
         <tr><th style="width:180px;">Дата поломки</th><td><?= e(date('d.m.Y H:i', strtotime($row['reported_at']))) ?></td></tr>
         <tr><th>Инв. номер</th><td><?= e($row['inventory_number']) ?></td></tr>
-        <tr><th>Объект</th><td><?= e($row['nomenclature_name'] ?? '—') ?></td></tr>
+        <tr><th>Объект</th><td><?= e($row['nomenclature_name'] ?? '—') ?><?php if ($row['nomenclature_id'] === null): ?> <span class="badge badge-warn">нет в 1С</span><?php endif; ?></td></tr>
         <tr><th>Место</th><td><?= $place ?: '—' ?></td></tr>
         <tr><th>Описание</th><td><?= nl2br(e($row['description'])) ?></td></tr>
         <tr><th>Метод воспроизведения</th><td><?= nl2br(e($row['reproduction_method'] ?? '—')) ?></td></tr>
@@ -112,6 +123,14 @@ include dirname(__DIR__) . '/admin/header.php';
         <?php endif; ?>
         <?php endif; ?>
     </table>
+    <?php if (!empty($kitItems)): ?>
+        <h4>Элементы комплекта</h4>
+        <ul style="margin: 0; padding-left: 20px;">
+            <?php foreach ($kitItems as $k): ?>
+                <li><a href="<?= e(WEB_ROOT) ?>/admin/breakdown.php?id=<?= (int)$k['id'] ?>">№<?= (int)$k['id'] ?></a> — <?= e($k['inventory_number']) ?> (<?= e($k['nomenclature_name'] ?? 'нет в 1С') ?>)</li>
+            <?php endforeach; ?>
+        </ul>
+    <?php endif; ?>
     <?php if (!empty($photos)): ?>
         <h4>Фото</h4>
         <div style="display:flex; flex-wrap: wrap; gap: 8px;">

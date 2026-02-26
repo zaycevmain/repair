@@ -53,11 +53,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $u->execute([$uid]);
         $u = $u->fetch();
         if ($u && (int)$u['role_id'] === ROLE_OPERATOR && !empty($u['pin']) && !empty($u['email']) && filter_var($u['email'], FILTER_VALIDATE_EMAIL)) {
-            $vars = ['{name}' => $u['name'], '{pin}' => $u['pin'], '{email}' => $u['email']];
+            $loginLink = (defined('SITE_URL') ? SITE_URL : '') . WEB_ROOT . '/?pin=' . $u['pin'];
+            $vars = ['{name}' => $u['name'], '{pin}' => $u['pin'], '{email}' => $u['email'], '{login_link}' => $loginLink];
             $subjectTpl = setting('mail_tpl', 'pin_sent_subject') ?: 'Доступ в Реестр поломок — ваш пин-код';
-            $bodyTpl = setting('mail_tpl', 'pin_sent_body') ?: '<p>Здравствуйте, {name}!</p><p>Вам предоставлен доступ к кабинету оператора Реестра поломок.</p><p>Ваш пин-код для входа: <strong>{pin}</strong></p><p>Сохраните это письмо.</p><p>— Реестр поломок</p>';
+            $bodyTpl = setting('mail_tpl', 'pin_sent_body') ?: '<p>Здравствуйте, {name}!</p><p>Вам предоставлен доступ к кабинету оператора Реестра поломок.</p><p>Ваш пин-код для входа: <strong>{pin}</strong></p><p><a href="{login_link}">Войти в кабинет по ссылке</a></p><p>— Реестр поломок</p>';
             $subject = mail_tpl_replace($subjectTpl, $vars, false);
-            $body = mail_tpl_replace($bodyTpl, $vars, true);
+            $bodyVars = ['{name}' => nl2br(htmlspecialchars($u['name'], ENT_QUOTES, 'UTF-8')), '{pin}' => htmlspecialchars($u['pin'], ENT_QUOTES, 'UTF-8'), '{email}' => htmlspecialchars($u['email'], ENT_QUOTES, 'UTF-8'), '{login_link}' => $loginLink];
+            $body = mail_tpl_replace($bodyTpl, $bodyVars, false);
             $sent = \Repair\Mailer::send($u['email'], $subject, $body);
             $message = $sent ? 'Пин-код отправлен на ' . $u['email'] : 'Не удалось отправить письмо. Проверьте настройки почты.';
         } else {

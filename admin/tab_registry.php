@@ -7,7 +7,7 @@ $stmt = $pdo->query("
     JOIN breakdown_statuses bs ON bs.id = b.status_id
     LEFT JOIN nomenclature n ON n.id = b.nomenclature_id
     JOIN users u ON u.id = b.reported_by_user_id
-    ORDER BY bs.is_completed ASC, b.reported_at DESC
+    ORDER BY bs.is_completed ASC, COALESCE(b.parent_breakdown_id, b.id) DESC, (b.parent_breakdown_id IS NOT NULL), b.id
 ");
 $rows = $stmt->fetchAll();
 ?>
@@ -29,13 +29,24 @@ $rows = $stmt->fetchAll();
                 </tr>
             </thead>
             <tbody>
-                <?php foreach ($rows as $r): 
+                <?php foreach ($rows as $r):
                     $place = $r['place_type'] === 'warehouse' ? 'Склад' : ($r['place_type'] === 'site' ? 'Площадка: ' . e($r['place_site_project'] ?? '') : e($r['place_other_text'] ?? ''));
+                    $rowClass = $r['is_completed'] ? 'completed' : '';
+                    if ($r['nomenclature_id'] === null) {
+                        $rowClass .= ($rowClass ? ' ' : '') . 'no-nomenclature';
+                    }
+                    $isKit = !empty($r['parent_breakdown_id']);
+                    if ($isKit) $rowClass .= ($rowClass ? ' ' : '') . 'kit-row';
                 ?>
-                <tr class="<?= $r['is_completed'] ? 'completed' : '' ?>">
-                    <td><?= e(date('d.m.Y H:i', strtotime($r['reported_at']))) ?></td>
+                <tr class="<?= $rowClass ?>">
+                    <td><?= $isKit ? '<span class="kit-indent">↳</span> ' : '' ?><?= e(date('d.m.Y H:i', strtotime($r['reported_at']))) ?></td>
                     <td><?= e($r['inventory_number']) ?></td>
-                    <td><?= e($r['nomenclature_name'] ?? '—') ?></td>
+                    <td>
+                        <?= e($r['nomenclature_name'] ?? '—') ?>
+                        <?php if ($r['nomenclature_id'] === null): ?>
+                            <span class="badge badge-warn">нет в 1С</span>
+                        <?php endif; ?>
+                    </td>
                     <td><?= $place ?: '—' ?></td>
                     <td style="max-width:200px;"><?= e(mb_substr($r['description'], 0, 80)) ?><?= mb_strlen($r['description']) > 80 ? '…' : '' ?></td>
                     <td><?= e($r['reporter_name']) ?></td>

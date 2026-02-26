@@ -39,7 +39,7 @@ class Telegram {
     }
 
     private static $defaults = [
-        'new_breakdown' => "🔔 <b>Новая поломка</b>\n<b>Объект:</b> {object}\n<b>Инв. номер:</b> {inventory_number}\n<b>Место:</b> {place}\n<b>Кто:</b> {reporter}\n<b>Описание:</b> {description}\n<b>Как воспроизвести:</b> {reproduction}\n{date}",
+        'new_breakdown' => "🔔 <b>Новая поломка #{id}</b>\n<b>Объект:</b> {object}\n<b>Инв. номер:</b> {inventory_number}\n<b>Место:</b> {place}\n<b>Кто:</b> {reporter}\n<b>Описание:</b> {description}\n<b>Как воспроизвести:</b> {reproduction}\n{date}",
         'repair_done' => "✅ <b>Выполнен ремонт</b>\nПоломка #{id}\n<b>Объект:</b> {object}\n<b>Инв:</b> {inventory_number}\n<b>Что сделано:</b> {completion_notes}",
         'closed_no_repair' => "📋 <b>Закрыто без ремонта</b>\nПоломка #{id}\n<b>Объект:</b> {object}\n<b>Инв:</b> {inventory_number}\n<b>Действие:</b> {closed_action}",
         'reopened' => "🔄 <b>Повторно открыта поломка</b>\nПоломка #{id}\n<b>Объект:</b> {object}\n<b>Инв:</b> {inventory_number}\nДата заявки: {reported_at}",

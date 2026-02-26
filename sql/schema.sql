@@ -103,6 +103,7 @@ CREATE TABLE IF NOT EXISTS `breakdowns` (
   `place_other_text` varchar(255) DEFAULT NULL COMMENT 'при place=other',
   `description` text NOT NULL,
   `reproduction_method` text,
+  `parent_breakdown_id` int unsigned DEFAULT NULL COMMENT 'элемент комплекта к заявке',
   `status_id` tinyint unsigned NOT NULL DEFAULT 1,
   `completed_at` datetime DEFAULT NULL COMMENT 'дата выполнения работ',
   `completion_notes` text COMMENT 'что делалось, что было сломано (при Выполнен ремонт)',
@@ -117,9 +118,11 @@ CREATE TABLE IF NOT EXISTS `breakdowns` (
   KEY `status_id` (`status_id`),
   KEY `reported_at` (`reported_at`),
   KEY `completed_at` (`completed_at`),
+  KEY `parent_breakdown_id` (`parent_breakdown_id`),
   CONSTRAINT `breakdowns_user_fk` FOREIGN KEY (`reported_by_user_id`) REFERENCES `users` (`id`),
   CONSTRAINT `breakdowns_nomenclature_fk` FOREIGN KEY (`nomenclature_id`) REFERENCES `nomenclature` (`id`) ON DELETE SET NULL,
-  CONSTRAINT `breakdowns_status_fk` FOREIGN KEY (`status_id`) REFERENCES `breakdown_statuses` (`id`)
+  CONSTRAINT `breakdowns_status_fk` FOREIGN KEY (`status_id`) REFERENCES `breakdown_statuses` (`id`),
+  CONSTRAINT `breakdowns_parent_fk` FOREIGN KEY (`parent_breakdown_id`) REFERENCES `breakdowns` (`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- Фото к поломкам

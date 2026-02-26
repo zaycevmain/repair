@@ -6,6 +6,7 @@
   var scanResult = document.getElementById('scan_result');
   var scanConfirm = document.getElementById('scan_confirm');
   var scanCancel = document.getElementById('scan_cancel');
+  var scanManual = document.getElementById('scan_manual');
   var formBack = document.getElementById('form_back');
   var breakdownForm = document.getElementById('breakdown_form');
   var formEquipmentLabel = document.getElementById('form_equipment_label');
@@ -19,13 +20,23 @@
   var html5QrCode = null;
   var scanStarted = false;
   var formSubmitting = false;
+  var kitMode = false;
+  var parentBreakdownId = null;
+  var scanModalTitle = document.getElementById('scan_modal_title');
 
   function showScanModal() {
-    lastScannedCode = null;
-    lastScannedName = null;
+    if (!kitMode) {
+      lastScannedCode = null;
+      lastScannedName = null;
+      parentBreakdownId = null;
+    }
     scanResult.classList.add('hidden');
     scanResult.className = 'scan-result hidden';
     scanConfirm.classList.add('hidden');
+    if (scanModalTitle) {
+      scanModalTitle.textContent = kitMode ? 'Добавление комплекта к заявке №' + parentBreakdownId : 'Наведите камеру на ШК/QR';
+    }
+    if (scanConfirm) scanConfirm.textContent = kitMode ? 'Добавить в комплект' : 'Подтвердить';
     scanModal.classList.remove('hidden');
     startScanner();
   }
@@ -33,6 +44,13 @@
   function hideScanModal() {
     stopScanner();
     scanModal.classList.add('hidden');
+    if (kitMode) {
+      kitMode = false;
+      parentBreakdownId = null;
+      if (scanModalTitle) scanModalTitle.textContent = 'Наведите камеру на ШК/QR';
+      if (scanConfirm) scanConfirm.textContent = 'Подтвердить';
+      window.location.reload();
+    }
   }
 
   function startScanner() {
@@ -40,22 +58,34 @@
     var readerEl = document.getElementById('reader');
     readerEl.innerHTML = '';
     html5QrCode = new Html5Qrcode('reader');
+    var formats = [
+      Html5QrcodeSupportedFormats.QR_CODE,
+      Html5QrcodeSupportedFormats.CODE_128,
+      Html5QrcodeSupportedFormats.CODE_39,
+      Html5QrcodeSupportedFormats.CODE_93,
+      Html5QrcodeSupportedFormats.EAN_13,
+      Html5QrcodeSupportedFormats.EAN_8,
+      Html5QrcodeSupportedFormats.DATA_MATRIX,
+      Html5QrcodeSupportedFormats.ITF,
+      Html5QrcodeSupportedFormats.UPC_A,
+      Html5QrcodeSupportedFormats.UPC_E
+    ];
+    if (Html5QrcodeSupportedFormats.AZTEC) formats.push(Html5QrcodeSupportedFormats.AZTEC);
+    if (Html5QrcodeSupportedFormats.PDF_417) formats.push(Html5QrcodeSupportedFormats.PDF_417);
+    if (Html5QrcodeSupportedFormats.CODABAR) formats.push(Html5QrcodeSupportedFormats.CODABAR);
+    if (Html5QrcodeSupportedFormats.MAXICODE) formats.push(Html5QrcodeSupportedFormats.MAXICODE);
+    if (Html5QrcodeSupportedFormats.RSS_14) formats.push(Html5QrcodeSupportedFormats.RSS_14);
+    if (Html5QrcodeSupportedFormats.RSS_EXPANDED) formats.push(Html5QrcodeSupportedFormats.RSS_EXPANDED);
     var config = {
-      fps: 10,
-      qrbox: { width: 280, height: 220 },
-      aspectRatio: 1.2,
-      formatsToSupport: [
-        Html5QrcodeSupportedFormats.QR_CODE,
-        Html5QrcodeSupportedFormats.EAN_13,
-        Html5QrcodeSupportedFormats.EAN_8,
-        Html5QrcodeSupportedFormats.CODE_128,
-        Html5QrcodeSupportedFormats.CODE_39,
-        Html5QrcodeSupportedFormats.CODE_93,
-        Html5QrcodeSupportedFormats.DATA_MATRIX,
-        Html5QrcodeSupportedFormats.ITF,
-        Html5QrcodeSupportedFormats.UPC_A,
-        Html5QrcodeSupportedFormats.UPC_E
-      ]
+      fps: 15,
+      qrbox: function (w, h) {
+        var width = Math.min(340, Math.floor(w * 0.9));
+        var height = Math.min(240, Math.floor(h * 0.55));
+        return { width: width, height: height };
+      },
+      aspectRatio: 1.33,
+      formatsToSupport: formats,
+      useBarCodeDetectorIfSupported: true
     };
     var constraints = {
       facingMode: 'environment'
@@ -71,7 +101,7 @@
           if (lastScannedCode === decodedText) return;
           lastScannedCode = decodedText;
           html5QrCode.pause();
-          checkBarcode(decodedText);
+          checkBarcode(decodedText, false);
         },
         function () {}
       ).then(function () {
@@ -94,7 +124,7 @@
     });
   }
 
-  function checkBarcode(code) {
+  function checkBarcode(code, fromManual) {
     scanResult.classList.remove('hidden');
     scanResult.textContent = 'Проверка...';
     scanResult.className = 'scan-result';
@@ -106,13 +136,25 @@
       if (data.found) {
         lastScannedName = data.name || data.inventory_number;
         scanResult.className = 'scan-result';
-        scanResult.textContent = data.name + ', ШК: ' + data.inventory_number + '. Подтвердите.';
+        scanResult.textContent = (data.name || data.inventory_number) + ', ШК: ' + data.inventory_number + (kitMode ? '. Нажмите «Добавить в комплект».' : '. Подтвердите.');
         scanConfirm.classList.remove('hidden');
       } else {
-        lastScannedCode = null;
-        scanResult.className = 'scan-result error';
-        scanResult.textContent = 'Код не найден в номенклатуре. Попробуйте снова.';
-        html5QrCode.resume();
+        var msg = 'Код не найден в номенклатуре (1С).\nДобавить оборудование без сопоставления?';
+        if (window.confirm(msg)) {
+          lastScannedCode = code;
+          lastScannedName = code + ' (нет в 1С)';
+          scanResult.className = 'scan-result';
+          scanResult.textContent = 'Код не найден в номенклатуре. Будет добавлено как «нет в 1С». Нажмите «' + (kitMode ? 'Добавить в комплект' : 'Подтвердить') + '».';
+          scanConfirm.classList.remove('hidden');
+          stopScanner();
+        } else {
+          lastScannedCode = null;
+          scanResult.className = 'scan-result error';
+          scanResult.textContent = 'Код не найден в номенклатуре. Попробуйте другой код.';
+          if (!fromManual && html5QrCode) {
+            html5QrCode.resume();
+          }
+        }
       }
     };
     xhr.onerror = function () {
@@ -165,9 +207,48 @@
     wrapOther.classList.toggle('hidden', v !== 'other');
   }
 
-  btnAdd.addEventListener('click', showScanModal);
+  function addKitItem() {
+    if (!parentBreakdownId || !lastScannedCode) return;
+    var xhr = new XMLHttpRequest();
+    xhr.open('POST', WEB_ROOT + '/api/add_kit_item.php');
+    xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
+    xhr.onload = function () {
+      var data = {};
+      try { data = JSON.parse(xhr.responseText); } catch (e) {}
+      if (data.ok) {
+        if (window.confirm('Элемент комплекта добавлен. Добавить ещё один?')) {
+          lastScannedCode = null;
+          lastScannedName = null;
+          scanResult.classList.add('hidden');
+          scanConfirm.classList.add('hidden');
+          stopScanner();
+          scanStarted = false;
+          startScanner();
+        } else {
+          hideScanModal();
+        }
+      } else {
+        alert(data.error || 'Ошибка добавления');
+      }
+    };
+    xhr.onerror = function () { alert('Ошибка связи.'); };
+    xhr.send('parent_id=' + encodeURIComponent(parentBreakdownId) + '&inventory_number=' + encodeURIComponent(lastScannedCode));
+  }
+
+  btnAdd.addEventListener('click', function () { kitMode = false; parentBreakdownId = null; showScanModal(); });
   scanCancel.addEventListener('click', hideScanModal);
-  scanConfirm.addEventListener('click', showFormModal);
+  scanConfirm.addEventListener('click', function () {
+    if (kitMode) addKitItem(); else showFormModal();
+  });
+  if (scanManual) {
+    scanManual.addEventListener('click', function () {
+      var code = window.prompt('Введите код (ШК/QR) вручную:');
+      if (!code) return;
+      stopScanner();
+      lastScannedCode = code;
+      checkBarcode(code, true);
+    });
+  }
   formBack.addEventListener('click', function () {
     formModal.classList.add('hidden');
     showScanModal();
@@ -198,8 +279,13 @@
       }
       if (data.ok) {
         formModal.classList.add('hidden');
-        alert('Поломка внесена.');
-        window.location.reload();
+        if (window.confirm('Поломка внесена как №' + data.id + '. Добавить элементы комплекта?')) {
+          kitMode = true;
+          parentBreakdownId = data.id;
+          showScanModal();
+        } else {
+          window.location.reload();
+        }
       } else {
         formSubmitting = false;
         if (submitBtn) {

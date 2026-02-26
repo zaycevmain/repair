@@ -9,11 +9,11 @@ if (!Auth::isOperator()) {
 
 $pdo = \Repair\Db::get();
 $myBreakdowns = $pdo->prepare("
-    SELECT b.id, b.reported_at, b.inventory_number, b.description, bs.name AS status_name
+    SELECT b.id, b.reported_at, b.inventory_number, b.description, b.nomenclature_id, b.parent_breakdown_id, bs.name AS status_name
     FROM breakdowns b
     JOIN breakdown_statuses bs ON bs.id = b.status_id
     WHERE b.reported_by_user_id = ?
-    ORDER BY b.reported_at DESC
+    ORDER BY COALESCE(b.parent_breakdown_id, b.id) DESC, (b.parent_breakdown_id IS NOT NULL), b.id
     LIMIT 50
 ");
 $myBreakdowns->execute([Auth::userId()]);
@@ -47,9 +47,12 @@ $myBreakdowns = $myBreakdowns->fetchAll();
                 <p class="text-muted">Вы пока не вносили поломок.</p>
             <?php else: ?>
                 <ul style="list-style: none; padding: 0; margin: 0;">
-                    <?php foreach ($myBreakdowns as $b): ?>
-                        <li style="padding: 12px 0; border-bottom: 1px solid var(--border);">
-                            <strong><?= e($b['inventory_number']) ?></strong> — <?= e(mb_substr($b['description'], 0, 60)) ?><?= mb_strlen($b['description']) > 60 ? '…' : '' ?>
+                    <?php foreach ($myBreakdowns as $b):
+                        $invLabel = $b['inventory_number'] . ($b['nomenclature_id'] === null ? ' (нет в 1С)' : '');
+                        if (!empty($b['parent_breakdown_id'])) $invLabel .= ' <span class="text-muted">(комплект к №' . (int)$b['parent_breakdown_id'] . ')</span>';
+                    ?>
+                        <li style="padding: 12px 0; border-bottom: 1px solid var(--border);<?= !empty($b['parent_breakdown_id']) ? ' padding-left: 12px; border-left: 3px solid var(--border);' : '' ?>">
+                            <strong><?= $invLabel ?></strong> — <?= e(mb_substr($b['description'], 0, 60)) ?><?= mb_strlen($b['description']) > 60 ? '…' : '' ?>
                             <br><span class="text-muted"><?= e(date('d.m.Y H:i', strtotime($b['reported_at']))) ?> · <?= e($b['status_name']) ?></span>
                         </li>
                     <?php endforeach; ?>
@@ -61,10 +64,11 @@ $myBreakdowns = $myBreakdowns->fetchAll();
     <!-- Модальное окно сканирования -->
     <div id="scan_modal" class="scan-overlay hidden">
         <div class="scan-window scan-window-scan">
-            <h3>Наведите камеру на ШК/QR</h3>
+            <h3 id="scan_modal_title">Наведите камеру на ШК/QR</h3>
             <div id="reader"></div>
             <div id="scan_result" class="scan-result hidden"></div>
             <div class="scan-actions">
+                <button type="button" class="btn btn-secondary" id="scan_manual">Ввести код вручную</button>
                 <button type="button" class="btn btn-secondary" id="scan_cancel">Отмена</button>
                 <button type="button" class="btn btn-primary hidden" id="scan_confirm">Подтвердить</button>
             </div>

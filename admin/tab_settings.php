@@ -210,10 +210,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['save_telegram_templat
         <input type="hidden" name="save_telegram_templates" value="1">
 
         <h4 style="margin-top: 20px;">Новая поломка</h4>
-        <p class="text-muted" style="font-size: 0.875rem;">Поля: <code>{object}</code> <code>{inventory_number}</code> <code>{place}</code> <code>{reporter}</code> <code>{description}</code> <code>{reproduction}</code> <code>{date}</code></p>
+        <p class="text-muted" style="font-size: 0.875rem;">Поля: <code>{id}</code> <code>{object}</code> <code>{inventory_number}</code> <code>{place}</code> <code>{reporter}</code> <code>{description}</code> <code>{reproduction}</code> <code>{date}</code></p>
         <div class="form-group">
             <label>Текст сообщения (HTML)</label>
-            <textarea name="tg_new_breakdown" rows="8" placeholder="🔔 &lt;b&gt;Новая поломка&lt;/b&gt;&#10;&lt;b&gt;Объект:&lt;/b&gt; {object}&#10;&lt;b&gt;Инв. номер:&lt;/b&gt; {inventory_number}&#10;..."><?= e(setting('telegram_tpl', 'new_breakdown')) ?></textarea>
+            <textarea name="tg_new_breakdown" rows="8" placeholder="🔔 &lt;b&gt;Новая поломка #{id}&lt;/b&gt;&#10;&lt;b&gt;Объект:&lt;/b&gt; {object}&#10;&lt;b&gt;Инв. номер:&lt;/b&gt; {inventory_number}&#10;..."><?= e(setting('telegram_tpl', 'new_breakdown')) ?></textarea>
         </div>
 
         <h4 style="margin-top: 20px;">Выполнен ремонт</h4>
@@ -247,14 +247,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['save_telegram_templat
         <input type="hidden" name="save_templates" value="1">
 
         <h4 style="margin-top: 20px;">Новая поломка</h4>
-        <p class="text-muted" style="font-size: 0.875rem;">Поля: <code>{object}</code> <code>{inventory_number}</code> <code>{place}</code> <code>{reporter}</code> <code>{description}</code> <code>{reproduction}</code> <code>{date}</code></p>
+        <p class="text-muted" style="font-size: 0.875rem;">Поля: <code>{id}</code> <code>{object}</code> <code>{inventory_number}</code> <code>{place}</code> <code>{reporter}</code> <code>{description}</code> <code>{reproduction}</code> <code>{date}</code></p>
         <div class="form-group">
             <label>Тема</label>
-            <input type="text" name="new_breakdown_subject" value="<?= e(setting('mail_tpl', 'new_breakdown_subject')) ?>" placeholder="Новая поломка: {inventory_number}">
+            <input type="text" name="new_breakdown_subject" value="<?= e(setting('mail_tpl', 'new_breakdown_subject')) ?>" placeholder="Новая поломка #{id}: {inventory_number}">
         </div>
         <div class="form-group">
             <label>Текст письма (HTML)</label>
-            <textarea name="new_breakdown_body" rows="6" placeholder="Объект: {object}&#10;Инв. номер: {inventory_number}&#10;Место: {place}&#10;Кто обнаружил: {reporter}&#10;Описание: {description}"><?= e(setting('mail_tpl', 'new_breakdown_body')) ?></textarea>
+            <textarea name="new_breakdown_body" rows="6" placeholder="Заявка №{id}&#10;Объект: {object}&#10;Инв. номер: {inventory_number}&#10;Место: {place}&#10;Кто обнаружил: {reporter}&#10;Описание: {description}"><?= e(setting('mail_tpl', 'new_breakdown_body')) ?></textarea>
         </div>
 
         <h4 style="margin-top: 20px;">Выполнен ремонт</h4>
@@ -291,14 +291,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['save_telegram_templat
         </div>
 
         <h4 style="margin-top: 20px;">Письмо с пин-кодом оператору</h4>
-        <p class="text-muted" style="font-size: 0.875rem;">Отправляется при нажатии «Отправить пин на почту» в разделе Пользователи. Поля: <code>{name}</code> <code>{pin}</code> <code>{email}</code></p>
+        <p class="text-muted" style="font-size: 0.875rem;">Отправляется при нажатии «Отправить пин на почту». Поля: <code>{name}</code> <code>{pin}</code> <code>{email}</code> <code>{login_link}</code> — ссылка для входа по пин-коду (по клику сразу в кабинет)</p>
         <div class="form-group">
             <label>Тема</label>
             <input type="text" name="pin_sent_subject" value="<?= e(setting('mail_tpl', 'pin_sent_subject')) ?>" placeholder="Доступ в Реестр поломок — ваш пин-код">
         </div>
         <div class="form-group">
             <label>Текст письма (HTML)</label>
-            <textarea name="pin_sent_body" rows="8" placeholder="Здравствуйте, {name}!&#10;&#10;Вам предоставлен доступ к кабинету оператора Реестра поломок.&#10;&#10;Ваш пин-код для входа: {pin}&#10;&#10;Сохраните это письмо.&#10;&#10;— Реестр поломок"><?= e(setting('mail_tpl', 'pin_sent_body')) ?></textarea>
+            <textarea name="pin_sent_body" rows="8" placeholder="Здравствуйте, {name}!&#10;&#10;Вам предоставлен доступ. Ваш пин: {pin}&#10;&#10;&lt;a href=&quot;{login_link}&quot;&gt;Войти в кабинет по ссылке&lt;/a&gt;&#10;&#10;— Реестр поломок"><?= e(setting('mail_tpl', 'pin_sent_body')) ?></textarea>
         </div>
 
         <button type="submit" class="btn btn-primary">Сохранить шаблоны</button>

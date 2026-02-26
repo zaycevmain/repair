@@ -26,6 +26,16 @@ if (!defined('WEB_ROOT')) {
     define('WEB_ROOT', isset($webRoot) ? $webRoot : '/repair');
 }
 
+// Базовый URL сайта для ссылок в письмах (логин по пин-коду). В config.local.php: $siteUrl = 'https://repair.mysite.ru';
+if (!defined('SITE_URL')) {
+    if (isset($siteUrl) && $siteUrl !== '') {
+        define('SITE_URL', rtrim($siteUrl, '/'));
+    } else {
+        $scheme = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') || (!empty($_SERVER['HTTP_X_FORWARDED_PROTO']) && $_SERVER['HTTP_X_FORWARDED_PROTO'] === 'https') ? 'https' : 'http';
+        define('SITE_URL', $scheme . '://' . ($_SERVER['HTTP_HOST'] ?? 'localhost'));
+    }
+}
+
 // Часовой пояс (NOW(), date()). По умолчанию Москва. В config.local.php: $timezone = 'Europe/Moscow';
 $appTimezone = $timezone ?? 'Europe/Moscow';
 date_default_timezone_set($appTimezone);
